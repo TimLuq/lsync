@@ -10,7 +10,7 @@ function lsync-path {
     for f in *; do
       if [ -d "$f" ]; then
         if [ ! -e "$2/$f" ]; then
-          if [ "$lsyncverbose" == 1 ]]; then
+          if [[ "$lsyncverbose" == 1 ]]; then
             echo "creating dir '$2/$f'"
           fi
           ## TODO: mkdir
