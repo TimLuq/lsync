@@ -48,7 +48,7 @@ function lsync-path {
     if [ -f "$2/$1" ]; then
       lsynctargettime="$(date +%s -r "$2/$1")"
       lsyncsourcetime="$(date +%s -r "$1")"
-      if [ "$lsynctargettime" -gte "$lsyncsourcetime" ]; then
+      if [ "$lsynctargettime" -gt "$lsyncsourcetime" ] || [ "$lsynctargettime" -eq "$lsyncsourcetime" ]; then
         if [[ "$(stat -c%s "$1")" == "$(stat -c%s "$2/$1")" ]] && diff -q "$1" "$2/$1" >/dev/null; then
           if [[ "$lsyncverbose" == 1 ]]; then
             echo "same file '$2/$1' need not write"
