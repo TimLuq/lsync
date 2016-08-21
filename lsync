@@ -48,22 +48,17 @@ function lsync-path {
     if [ -f "$2/$1" ]; then
       lsynctargettime="$(date +%s -r "$2/$1")"
       lsyncsourcetime="$(date +%s -r "$1")"
-      if [ "$lsynctargettime" -eq "$lsyncsourcetime" ]; then
-        if [[ "$(stat -c%s "$1")" == "$(stat -c%s "$2/$1")" ]]; then
-          if [[ "$lsyncverbose" == 1 ]]; then
-            echo "same time '$2/$1' need not write"
-          fi
-          return 0
-        fi
-      elif [ "$lsynctargettime" -gt "$lsyncsourcetime" ]; then
+      if [ "$lsynctargettime" -gte "$lsyncsourcetime" ]; then
         if [[ "$(stat -c%s "$1")" == "$(stat -c%s "$2/$1")" ]] && diff -q "$1" "$2/$1" >/dev/null; then
           if [[ "$lsyncverbose" == 1 ]]; then
             echo "same file '$2/$1' need not write"
           fi
           return 0
         fi
-        echo "will not overwrite newer file '$2/$1'" >&2
-        return 36
+        if [ "$lsynctargettime" -gt "$lsyncsourcetime" ]; then
+          echo "will not overwrite newer file '$2/$1'" >&2
+          return 36
+        fi
       fi
     fi
     
