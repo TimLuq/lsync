@@ -13,7 +13,10 @@ function lsync-path {
           if [[ "$lsyncverbose" == 1 ]]; then
             echo "creating dir '$2/$f'"
           fi
-          ## TODO: mkdir
+          mkdir "$2/$f"
+          if [[ "$?" != 0 ]]; then
+            return 40
+          fi
         elif [ ! -d "$2/$f" ]; then
           echo "can not overwrite file '$2/$f' with dir" >&2
           return 33
@@ -58,9 +61,12 @@ function lsync-path {
       fi
     fi
     
-    # TODO: execute cp
     if [[ "$lsyncverbose" == 1 ]]; then
       echo "copying '$(pwd)/$1' to '$2/$1'"
+    fi
+    cp "$1" "$2/$1"
+    if [[ "$?" != 0 ]]; then
+      return 40
     fi
     return 0
   fi
