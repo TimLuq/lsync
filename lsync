@@ -62,6 +62,7 @@ function lsync-path {
     if [[ "$lsyncverbose" == 1 ]]; then
       echo "copying '$(pwd)/$1' to '$2/$1'"
     fi
+    return 0
   fi
   
   echo "unable to copy the type of '$(pwd)/$1'" >&2
