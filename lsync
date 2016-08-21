@@ -1,0 +1,120 @@
+#!/bin/bash
+
+LSYNCLOADED=1
+
+function lsync-path {
+
+  # handle dirs
+  if [ -d "$1" ]; then
+    cd "$1"
+    for f in *; do
+      if [ -d "$f" ]; then
+        if [ ! -e "$2/$f" ]; then
+          if [ "$lsyncverbose" == 1 ]]; then
+            echo "creating dir '$2/$f'"
+          fi
+          ## TODO: mkdir
+        elif [ ! -d "$2/$f" ]; then
+          echo "can not overwrite file '$2/$f' with dir" >&2
+          return 33
+        fi
+        lsync-path "$f" "$2/$f"
+        lsyncret="$?"
+        if [[ "$lsyncret" != 0 ]]; then
+          return "$lsyncret"
+        fi
+      elif [ -e "$f" ]; then
+        lsync-path "$f" "$2"
+        lsyncret="$?"
+        if [[ "$lsyncret" != 0 ]]; then
+          return "$lsyncret"
+        fi
+      fi
+    done
+    cd ..
+    return 0
+  fi
+  
+  # handle regular files
+  if [ -f "$1" ]; then
+    if [ ! -d "$2" ]; then
+      echo "target '$2' is not a dir while writing '$1'"
+      return 34
+    fi
+    
+    if [ -f "$2/$1" ]; then
+      lsynctargettime="$(date +%s -r "$2/$1")"
+      lsyncsourcetime="$(date +%s -r "$1")"
+      if [ "$lsynctargettime" -eq "$lsyncsourcetime" ]; then
+        if [[ "$(stat -c%s "$1")" == "$(stat -c%s "$2/$1")" ]]; then
+          if [[ "$lsyncverbose" == 1 ]]; then
+            echo "same time '$2/$1' need not write"
+          fi
+          return 0
+        fi
+      elif [ "$lsynctargettime" -gt "$lsyncsourcetime" ]; then
+        echo "will not overwrite newer file '$2/$1'" >&2
+        return 36
+      fi
+    fi
+    
+    # TODO: execute cp
+    if [[ "$lsyncverbose" == 1 ]]; then
+      echo "copying '$(pwd)/$1' to '$2/$1'"
+    fi
+  fi
+  
+  echo "unable to copy the type of '$(pwd)/$1'" >&2
+  return 48
+}
+
+function lsync {
+  lsyncarchive=0
+  lsyncverbose=0
+  lsyncgetflags=1
+  
+  while [[ "$lsyncgetflags" == 1 ]]; do
+    case "$1" in
+    -*)
+      lsyncflag="$1"
+      shift
+      case "$lsyncflag" in
+      -*a*)
+        lsyncarchive=1
+        ;;
+      esac
+      case "$lsyncflag" in
+      -*v*)
+        lsyncverbose=1
+        ;;
+      esac
+      ;;
+    *)
+      lsyncgetflags=0
+      ;;
+    esac
+  done
+  
+  if [[ "$#" != 2 ]]; then
+    echo "Usage: lsync [-a] [-v] SRC TARGETDIR" >&2
+    return 4
+  fi
+  if [ -e "$2" ] && [ ! -d "$2" ]; then
+    echo "Usage: lsync [-a] [-v] SRC TARGETDIR" >&2
+    return 12
+  fi
+
+  lsynccwd="$(pwd)"
+  cd "$(dirname "$1")"
+  lsync-path "$(basename "$1")" "${2%%/}"
+}
+
+if [[ "$LSYNCASRSYNC" != "" ]]; then
+  function rsync {
+    lsync "$@"
+    return "$?"
+  }
+elif [[ "$0" == "lsync" ]] || [[ "$0" == "rsync" ]]; then
+  lsync "$@"
+  exit "$?"
+fi
