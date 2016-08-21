@@ -64,8 +64,14 @@ function lsync-path {
     if [[ "$lsyncverbose" == 1 ]]; then
       echo "copying '$(pwd)/$1' to '$2/$1'"
     fi
-    cp "$1" "$2/$1"
-    if [[ "$?" != 0 ]]; then
+    if [[ "$lsyncarchive" == 1 ]]; then
+      cp -p "$1" "$2/$1"
+      lsyncret="$?"
+    else
+      cp "$1" "$2/$1"
+      lsyncret="$?"
+    fi
+    if [[ "$lsyncret" != 0 ]]; then
       return 40
     fi
     return 0
